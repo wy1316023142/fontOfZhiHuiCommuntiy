@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=3.0&ak=MGoVka4kmzYKHimt4LEvl8KhpNz5GFF4"></script>
+    <script src="./lib/jquery-2.1.4.min.js"></script>
+    <script src="./lib/InfoBox_min.js"></script>
+    <style>
+        body, html {width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}
+        #allmap{width:100%;height:100%;}
+        .box{
+            width: 392px;
+            height: 308px;
+            box-sizing: border-box;
+            background: rgba(5,14,34,0.9);
+            border: 2px solid #3aa0ff;
+            border-radius: 5px;
+            box-shadow: 0 0 20px #3aa0ff;
+            padding: 10px 20px 20px;
+            color: #ffffff;
+            font-size: 12px;
+            margin-bottom: 30px;
+            overflow-y: auto;
+        }
+        .box::-webkit-scrollbar { /*滚动条整体样式*/
+             width: 5px; /*高宽分别对应横竖滚动条的尺寸*/
+             height: 5px;
+         }
+        .box::-webkit-scrollbar-thumb { /*滚动条里面小方块*/
+             border-radius: 20px;
+             -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+             background: #EDEDED;
+         }
+        .box::-webkit-scrollbar-track { /*滚动条里面轨道*/
+             -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+             border-radius: 20px;
+             background: #535353;
+         }
+        .box:before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-top-color: #3aa0ff;
+            left: 50%;
+            top: 308px;
+            margin-left: -10px;
+        }
+        .box h3{
+            font-size: 15px;
+            margin: 0;
+            padding: 0;
+        }
+        .box-con{
+            margin-top: 15px;
+        }
+        .box p{
+            margin: 0 0 10px 0;
+        }
+        .box .slide_container{
+            position: relative;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .rslides {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            height: 134px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        .rslides li{
+            z-index: 1;
+            float: none;
+            position: absolute;
+            opacity: 0;
+            display: list-item;
+            transition: opacity 500ms ease-in-out 0s;
+        }
+        .rslides li.active{
+            z-index: 2;
+            float: left;
+            position: relative;
+            opacity: 1;
+        }
+        .rslides li img{
+            display: block;
+            width: 100%;
+            height: 134px;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+<div id="allmap"></div>
+
+<!--<div class="box">
+    <h3>学校名称</h3>
+    <div class="slide_container">
+        <ul id="slider" class="rslides">
+            <li class="active">
+                <img src="https://www.chinadiscovery.com/assets/images/homepage/head-promotion/Golden-triangle.jpg" >
+            </li>
+            <li >
+                <img src="https://www.chinadiscovery.com/assets/images/homepage/head-promotion/zhangjiajie-national-park-1920.jpg" >
+            </li>
+            <li >
+                <img src="https://www.chinadiscovery.com/assets/images/homepage/head-promotion/high-speed-train-tours-1920.jpg" >
+            </li>
+        </ul>
+    </div>
+    <div class="box-con">
+        <p>
+            <span>总人数：7258</span>
+            <span style="margin-left: 20px;">教职工人数：368</span>
+        </p>
+        <p>学校位置：图中204行代码开始就是</p>
+        <p>学校简介：图中204行代码开始就是相关默认属性的获取定义，我们可以对他进行扩展新增属性，比如新增关闭按钮的margin或者width,然后在创建infoBox对象的时候进行设置定义。比如下方定义的opts中的closeIconZindex 就是扩展的属性：在上方infoBox.js的204后面的代码中进行的添加该属性this._opts.closeIconZIndex=d.closeIconZIndex||1,即可，同理可以扩展其他的属性。</p>
+    </div>
+</div>-->
+
+<script>
+
+    var map = new BMap.Map("allmap");
+    var infoBoxs=[];
+    var myComapOverlays=[];
+    var timer=''
+    map.enableScrollWheelZoom();
+    map.centerAndZoom(new BMap.Point(104.071592,30.625115), 12);
+    fetch('./custom_map_config.json').then((res) => res.json()).then((data) =>  {
+        map.setMapStyleV2({styleJson:data});
+    })
+
+    $.ajax({
+        url: "http://125.70.244.10:18898/business-wuhou/tOrganGrid/findAll",
+        type: "get",
+        dataType: "json",
+        success: function (data) {
+            if(data.code==0){
+                data.result.forEach(item=>{
+                    if(item.organName=='武侯区'){
+                        var stroke=JSON.parse(item.displayProperty)
+                        var paths=JSON.parse(item.mapProperty)
+                        var point=[];
+                        paths.forEach(item=>[
+                            point.push(new BMap.Point(item.lng, item.lat),)
+                        ])
+                        var polyline = new BMap.Polyline(point, {strokeColor:stroke.color, stroke:stroke.weight, stroke:stroke.opacity});   //创建折线
+                        map.addOverlay(polyline);   //增加折线
+                    }
+                })
+            }
+        }
+    });
+    $.ajax({
+        url: "http://125.70.244.10:18898/business-wuhou/school/getSchoolMap",
+        type: "get",
+        dataType: "json",
+        success: function (data) {
+            if(data.code==0){
+                for(var i=0;i<data.result.length;i++){
+                    if( data.result[i].latitude && data.result[i].longitude){
+                        var point = new BMap.Point( data.result[i].longitude, data.result[i].latitude);
+                        var content=data.result[i].name
+                        addMarker(point,content,data.result[i]);
+
+
+                    }
+                }
+            }
+        }
+    });
+    function addMarker(point,content,data){
+        var myIcon='',background='',borderColor='';
+        switch (data.schoolType){
+            case '01':
+                myIcon = new BMap.Icon("./image/wuhou/1.png", new BMap.Size(45,50));
+                background='#3ba0ff'
+                borderColor='#60b2ff'
+                break;
+            case '02':
+                myIcon = new BMap.Icon("./image/wuhou/2.png", new BMap.Size(45,50));
+                background='#36cbcb'
+                borderColor='#6de3e3'
+                break;
+            case '03':
+                myIcon = new BMap.Icon("./image/wuhou/3.png", new BMap.Size(45,50));
+                background='#4dcb73'
+                borderColor='#7bef9e'
+                break;
+            case '04':
+                myIcon = new BMap.Icon("./image/wuhou/4.png", new BMap.Size(45,50));
+                background='#fad337'
+                borderColor='#fadf74'
+                break;
+            case '05':
+                myIcon = new BMap.Icon("./image/wuhou/5.png", new BMap.Size(45,50));
+                background='#fa6400'
+                borderColor='#f98f48'
+                break;
+            case '06':
+                myIcon = new BMap.Icon("./image/wuhou/6.png", new BMap.Size(45,50));
+                background='#f2637b'
+                borderColor='#f590a1'
+
+                break;
+            case '07':
+                myIcon = new BMap.Icon("./image/wuhou/7.png", new BMap.Size(45,50));
+                background='#c425ca'
+                borderColor='#CA50CA'
+                break;
+        }
+
+        var marker = new BMap.Marker(point,{icon:myIcon});  // 创建标注
+        map.addOverlay(marker);// 将标注添加到地图中
+        var label = new BMap.Label(content,{offset:new BMap.Size(12,5)});
+        label.setStyle({
+            height: '34px',
+            lineHeight: '34px',
+            padding:'0 10px 0 30px',
+            color : "#ffffff",
+            fontSize : "14px",
+            border:'1px solid ',
+            borderColor:borderColor,
+            borderRadius: '15px',
+            background: background,
+            fontWeight:'bold',
+            zIndex:'-1'
+        });
+        marker.setLabel(label);
+        label.hide()
+        myComapOverlays.push(label)
+        map.addEventListener("zoomend",function(type,tag){
+            if(map.getZoom()>=16){
+                label.show()
+            }else {
+                label.hide()
+            }
+        });
+        
+        var temp=''
+        if( data.imgList.length!=0){
+            data.imgList.forEach((item,index)=>{
+                if(index==0){
+                    temp+= ' <li class="active"><img src="data:image/jpeg;base64,'+item+'"></li>'
+                }else {
+                    temp+= '<li><img src="data:image/jpeg;base64,'+item+'"></li>'
+                }
+            })
+        }
+        var html = '<div class="box">' +
+            '    <h3>'+data.name+'</h3>' +
+            '   <div class="slide_container">' +
+            '        <ul id="slider" class="rslides">' +temp+ '</ul>' +
+            '    </div>'+
+            '    <div class="box-con">' +
+            '        <p>' +
+            '            <span>总人数：'+data.totalNum+'</span>' +
+            '            <span style="margin-left: 20px;">教职工人数：'+data.staffNum+'</span>' +
+            '        </p>' +
+            '        <p>学校位置：'+data.address+'</p>' +
+            '        <p>学校简介：'+data.profile+'</p>' +
+            '    </div>' +
+            '</div>';
+        let infoBox = new BMapLib.InfoBox(map,html,{
+            align: INFOBOX_AT_TOP,
+            closeIconUrl:'./image/wuhou/close.png',
+            closeIconMargin: "12px 15px 0 0",
+        });
+        infoBox.close();
+        infoBoxs.push(infoBox)
+        addClickHandler(marker,infoBox);
+
+    }
+    function addClickHandler(marker,infoBox){
+        marker.addEventListener("click",function(e){
+            openInfo(marker,infoBox)}
+        );
+    }
+    function openInfo(marker,infoBox){
+        for(var i=0;i<infoBoxs.length;i++){
+            infoBoxs[i].hide();
+        }
+        infoBox.open(marker);
+        clearInterval(timer)
+        timer=setInterval(function () {
+            var index = $(".rslides li.active").index();
+            if( index == ($(".rslides li").length-1)  ){
+                index=-1
+            }
+            $(".rslides  li").not(index+1).removeClass('active')
+            $(".rslides  li").eq(index+1).addClass('active')
+
+        }, 4000)
+    }
+    function showMarkerByType(type,isShow){
+        var allOverlay = map.getOverlays();
+        var len = allOverlay.length;
+        var obj=null;
+        for (var i = len-1; i > -1; i--){
+            obj=allOverlay[i];
+            if(obj&&obj.attributes&&obj.attributes.entity&&obj.attributes.entity.type == type){
+                if(isShow){
+                    obj.show()
+                }else {
+                    obj.hide()
+                }
+            }
+        }
+    }
+
+   /* setInterval(function () {
+        var index = $(".rslides li.active").index();
+        if( index == ($(".rslides li").length-1)  ){
+            index=-1
+        }
+        $(".rslides  li").not(index+1).removeClass('active')
+        $(".rslides  li").eq(index+1).addClass('active')
+
+    }, 4000);*/
+
+
+</script>
+</body>
+</html>

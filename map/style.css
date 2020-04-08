@@ -1,0 +1,96 @@
+*{margin: 0;padding: 0}
+.box5-container{
+    box-sizing: border-box;
+    width: 100%;
+    height: 577px;
+    padding: 13px 13px;
+    position: relative;
+    color: #ADB9E4;
+    overflow-y: hidden;
+}
+.box5-container .el-icon-loading{
+    font-size: 30px;
+    color: #ffffff;
+}
+.box5-container .map-title{
+    position: absolute;
+    bottom: -41px;
+    left: 50%;
+    margin-left: -131.5px;
+    width:263px;
+    height: 93px;
+    line-height: 43px;
+    font-size: 18px;
+    background: url("image/a1.png") no-repeat center center;
+    z-index: 99;
+    font-weight: bold;
+    text-align: center;
+}
+.box5-container .video-box{
+    position: absolute;
+    top:13px;
+    left: 13px;
+    width:400px ;
+    height: 250px;
+    background: #000;
+    z-index: 99;
+}
+.box5-container .video-box .close{
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    padding: 3px;
+    right: 5px;
+    top:5px;
+    font-size: 14px;
+    background: #ffffff;
+    text-align: center;
+    border-radius:50% ;
+    z-index: 199;
+    cursor: pointer;
+}
+.box5-container .map-tools{
+    position: absolute;
+    top: 22px;
+    right: 22px;
+    z-index: 99;
+}
+.box5-container .map-tools>div{
+    width: 123px;
+    height: 29px;
+    line-height: 29px;
+    background: #0C0A2A;
+    border-radius:3px;
+    margin-top: 5px;
+    font-size: 14px;
+    vertical-align: middle;
+    cursor: pointer;
+}
+.box5-container .map-tools>div.active{
+    background: #2E2C6F;
+}
+.box5-container .map-tools>div>img{
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    margin-left: 8px;
+    margin-right: 10px;
+
+}
+#allmap{
+    width:100%;
+    height: 100%;
+    z-index: 1;
+}
+.index2{
+    height: 726px;
+}
+.toolsRigth{
+    right: 370px!important;
+    top: 86px!important;
+}
+.indexVideoBox{
+    left: 370px!important;
+    top: 86px!important;
+}

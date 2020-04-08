@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="http://api.map.baidu.com/api?type=webgl&v=1.0&ak=MGoVka4kmzYKHimt4LEvl8KhpNz5GFF4"></script>
+    <script src="./lib/jquery-2.1.4.min.js"></script>
+    <style>
+        body, html {width: 100%;height: 100%;margin:0;font-family:"微软雅黑";}
+        #allmap{width:100%;height:100%;}
+    </style>
+</head>
+<body>
+<div id="allmap"></div>
+<script>
+
+    var map = new BMapGL.Map("allmap");
+    map.enableScrollWheelZoom();
+    map.centerAndZoom(new BMapGL.Point(104.071592,30.625115), 17);
+    map.setHeading(64.5);
+    map.setTilt(73);
+   /* fetch('./custom_map_config.json').then((res) => res.json()).then((data) =>  {
+        map.setMapStyleV2({styleJson:data});
+    })*/
+    let url=GetUrlParame('url')
+    let method=GetUrlParame('method')
+
+    if(url&&method){
+        $.ajax({
+            //url: "http://25.30.9.250:8989/business-wuhou/tJyxJcxxXx/schoolPosition",
+            url: url,
+            //type: "get",
+            type: method,
+            dataType: "json",
+
+            success: function (data) {
+                if(data.code==0){
+                    for(var i=0;i<data.result.length;i++){
+                        if( data.result[i].lat && data.result[i].lon){
+                            console.log( data.result[i])
+                            var point = new BMapGL.Point( data.result[i].lon, data.result[i].lat);
+                            var content=data.result[i].name
+                            addMarker(point,content);
+                        }
+                    }
+                }
+            }
+        });
+    }
+    function   GetUrlParame (name) {
+        let reg = new RegExp("(^|\\?|&)" + name + "=([^&]*)(\\s|&|$)","i");
+        if(reg.test(window.location.href)){
+            return unescape(RegExp.$2.replace(/\+/g," "))
+        }else{
+            return false;
+        }
+    }
+    function addMarker(point,content){
+        var myIcon = new BMapGL.Icon("image/12.png", new BMapGL.Size(32,32));
+        var marker = new BMapGL.Marker(point,{icon:myIcon});  // 创建标注
+        map.addOverlay(marker);// 将标注添加到地图中
+        var label = new BMapGL.Label(content,{offset:new BMapGL.Size(0,-40)});
+        label.setStyle({
+            position: 'absolute',
+            left:'50%',
+            transform: 'translate(-50%,0)',
+            color : "#01baff",
+            fontSize : "14px",
+            border:'transparent',
+            background: 'transparent',
+            fontWeight:'bold',
+        });
+        marker.setLabel(label);
+    }
+</script>
+</body>
+</html>

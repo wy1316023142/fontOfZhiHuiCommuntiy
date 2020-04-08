@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="http://api.map.baidu.com/api?type=webgl&v=1.0&ak=MGoVka4kmzYKHimt4LEvl8KhpNz5GFF4"></script>
+    <script src="./lib/jquery-2.1.4.min.js"></script>
+    <style>
+        body, html {width: 100%;height: 100%;margin:0;font-family:"微软雅黑";position: relative;}
+        #allmap{width:100%;height:100%;}
+        .drawingBox{
+            position: absolute;
+            bottom: 60px;
+            left: 0px;
+            z-index: 9999;
+        }
+        #drawingBtn{
+            background: #ff6700;
+            border: none;
+            color: #fff;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+<div id="allmap"></div>
+<div class="drawingBox">
+    <button id="drawingBtn">开始画图</button>
+</div>
+<script>
+
+    var map = new BMapGL.Map("allmap",{
+        mapStyle: {
+            styleJson:[
+                {
+                    "featureType": "all",
+                    "elementType": "labels.text.fill",
+                    "stylers": {
+                        "color": "#2da0c6",
+                        "visibility": "off"
+                    }
+                },
+            ]
+        }
+
+    });
+    map.enableScrollWheelZoom();
+    map.centerAndZoom(new BMapGL.Point(116.405, 39.920), 20);
+    map.setHeading(64.5);
+    map.setTilt(73);
+   /* fetch('./custom_map_config.json').then((res) => res.json()).then((data) =>  {
+        map.setMapStyleV2({styleJson:data});
+    })*/
+    let url=GetUrlParame('url')
+    let method=GetUrlParame('method')
+    var marker = new BMapGL.Marker(new BMapGL.Point(116.404, 39.915));
+
+    function drawing(clickData){
+            var polyline = new BMapGL.Polyline(clickData, {strokeColor:"blue", strokeWeight:4, strokeOpacity:0.5}); 
+                 map.addOverlay(polyline);           
+        }
+
+    map.addOverlay(marker);    
+    var arr1=[]  
+    var flag=false
+    $('#drawingBtn').click(function(){
+        flag=!flag
+        console.log(flag);
+        
+      if(flag==true){
+        $('#drawingBtn').text('停止画图')
+          
+      }else{
+        $('#drawingBtn').text('开始画图')
+          
+      }
+
+            map.addEventListener('mousedown',ccc)
+            
+            function ccc(e){
+                if(flag==true){
+                   
+                    if(e.button==0){
+                        var arr2=[e.latlng.lng,e.latlng.lat]
+                        arr1.push(arr2)
+                        var clickData=[]
+                        for (let i = 0; i < arr1.length; i++) {
+                            clickData.push(new BMapGL.Point(arr1[i][0], arr1[i][1]))
+                        }
+                        drawing(clickData)
+                    }else if(e.button==2){
+                        arr1.pop()
+                        map.clearOverlays(clickData);    
+                        var clickData=[]
+                        for (let i = 0; i < arr1.length; i++) {
+                            clickData.push(new BMapGL.Point(arr1[i][0], arr1[i][1]))
+                        }
+                        drawing(clickData)
+                    }
+                }else{
+
+                }
+            }
+    
+            // map.removeEventListener('mousedown',ccc)
+        
+    })  
+    if(url&&method){
+        $.ajax({
+            //url: "http://25.30.9.250:8989/business-wuhou/tJyxJcxxXx/schoolPosition",
+            url: url,
+            //type: "get",
+            type: method,
+            dataType: "json",
+
+            success: function (data) {
+                if(data.code==0){
+                    for(var i=0;i<data.result.length;i++){
+                        if( data.result[i].lat && data.result[i].lon){
+                            var point = new BMapGL.Point( data.result[i].lon, data.result[i].lat);
+                            var content=data.result[i].name
+                            addMarker(point,content);
+                        }
+                    }
+                }
+            }
+        });
+    }
+    function   GetUrlParame (name) {
+        let reg = new RegExp("(^|\\?|&)" + name + "=([^&]*)(\\s|&|$)","i");
+        if(reg.test(window.location.href)){
+            return unescape(RegExp.$2.replace(/\+/g," "))
+        }else{
+            return false;
+        }
+    }
+    function addMarker(point,content){
+        var myIcon = new BMapGL.Icon("image/12.png", new BMapGL.Size(32,32));
+        var marker = new BMapGL.Marker(point,{icon:myIcon});  // 创建标注
+        map.addOverlay(marker);// 将标注添加到地图中
+        var label = new BMapGL.Label(content,{offset:new BMapGL.Size(0,-40)});
+        label.setStyle({
+            position: 'absolute',
+            left:'50%',
+            transform: 'translate(-50%,0)',
+            color : "#01baff",
+            fontSize : "14px",
+            border:'transparent',
+            background: 'transparent',
+            fontWeight:'bold',
+        });
+        marker.setLabel(label);
+    }
+</script>
+</body>
+</html>

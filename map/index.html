@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=MGoVka4kmzYKHimt4LEvl8KhpNz5GFF4"></script>
+    <link href="./lib/video-js/video-js.css" rel="stylesheet">
+    <script src="./lib/video-js/video.js"></script>
+    <script src="./lib/jquery-2.1.4.min.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<!--地图资源-->
+<div class="box5-container">
+
+    <div id="el-loading-mask" class="el-loading-mask" style="background-color: rgba(0, 0, 0, 0.8);display: none">
+        <div class="el-loading-spinner">
+            <i class="el-icon-loading"></i>
+        </div>
+    </div>
+
+    <div class="map-title center">资源分布图</div>
+    <div class="map-tools">
+        <div>
+            <img src="./image/111.png">门禁设备 <span id="num1">0</span>
+        </div>
+        <div>
+            <img src="./image/122.png">监控设备 <span id="num2">0</span>
+        </div>
+        <div>
+            <img src="./image/133.png">消防栓 <span id="num3">0</span>
+        </div>
+        <div>
+            <img src="./image/144.png">井盖 <span id="num4">0</span>
+        </div>
+        <div>
+            <img src="./image/155.png">一键报警 <span id="num5">0</span>
+        </div>
+        <div>
+            <img src="./image/166.png">烟感 <span id="num6">0</span>
+        </div>
+    </div>
+    <div class="video-box" style="display:none;">
+        <div class="close">X</div>
+        <video  id="rtmpVideo" class="video-js vjs-default-skin"  controls width="400" height="250"  data-setup="{}">
+            <source src="" type="rtmp/flv">
+        </video>
+    </div>
+
+    <div id="allmap"></div>
+</div>
+<script>
+   
+   var num1=0, num2=0, num3=0, num=0, num5=0, num6=0 ,point=null;
+   videojs.options.flash.swf = "lib/video-js/video-js.swf";
+   var map = new BMap.Map("allmap",{mapType: BMAP_HYBRID_MAP});
+
+   map.enableScrollWheelZoom(true);     //开启鼠标滚轮缩放
+   map.addControl(new BMap.ScaleControl());//比例尺控件
+   map.addControl(new BMap.NavigationControl());
+   //去除地图自带的地址名称
+   map.setMapStyle({
+       styleJson:[
+           {
+               "featureType": "road",
+               "elementType": "all",
+               "stylers": {
+                   "visibility": "off"
+               }
+           },
+           {
+               "featureType": "building",
+               "elementType": "all",
+               "stylers": {
+                   "visibility": "off"
+               }
+           },
+           {
+               "featureType": "poilabel",
+               "elementType": "all",
+               "stylers": {
+                   "visibility": "off"
+               }
+           },
+           {
+               "featureType": "manmade",
+               "elementType": "all",
+               "stylers": {
+                   "visibility": "off"
+               }
+           },
+       ]
+   });
+   $(".map-tools>div").on('click',function () {
+       if($(this).hasClass('active')){
+           if($(this).index()==0){
+               showMarkerByType(1,false)
+           }
+           if($(this).index()==1){
+               showMarkerByType(2,false)
+           }
+           if($(this).index()==2){
+               showMarkerByType(3,false)
+           }
+           if($(this).index()==3){
+               showMarkerByType(4,false)
+           }
+           if($(this).index()==4){
+               showMarkerByType(5,false)
+           }
+           if($(this).index()==5){
+               showMarkerByType(6,false)
+           }
+           $(this).removeClass("active")
+       }else {
+           if($(this).index()==0){
+               showMarkerByType(1,true)
+           }
+           if($(this).index()==1){
+               showMarkerByType(2,true)
+           }
+           if($(this).index()==2){
+               showMarkerByType(3,true)
+           }
+           if($(this).index()==3){
+               showMarkerByType(4,true)
+           }
+           if($(this).index()==4){
+               showMarkerByType(5,true)
+           }
+           if($(this).index()==5){
+               showMarkerByType(6,true)
+           }
+           $(this).addClass("active")
+       }
+   })
+   var opts = {
+        width : 80,     // 信息窗口宽度
+        height: 40,     // 信息窗口高度
+        title : ""  // 信息窗口标题
+    };
+   if(GetUrlParame('organId')){
+        getPosition(GetUrlParame('organId'))
+   }
+
+   function getPosition(id){
+        $.ajax({
+            url: "http://222.211.78.60:9103/bigscreen/organ/getOrganById?organId="+id,
+            type: "get",
+            dataType: "json",
+        
+            success: function (data) {
+                if(data.code==0){
+                    if(data.result.x != "" && data.result.y != ""){
+                        var obj = bd_encrypt(data.result.x,data.result.y);
+                        point = new BMap.Point(obj.x,obj.y);
+                        map.centerAndZoom(point, 20);//初始化地图，设置中心点坐标和地图级别
+                        initMap(id)
+                    }else {
+
+                    }
+                }
+               
+                
+            }
+        });
+    }
+
+   function   GetUrlParame (name) {
+        let reg = new RegExp("(^|\\?|&)" + name + "=([^&]*)(\\s|&|$)","i");
+        if(reg.test(window.location.href)){
+            return unescape(RegExp.$2.replace(/\+/g," "))
+        }else{
+            return false;
+        }
+    }
+
+    $(".close").click(function () {
+        $(".video-box").hide();
+        videojs('rtmpVideo').src('');
+    })
+
+
+    function addClickHandler(content,marker,naming){
+        marker.addEventListener("click",function(e){
+            if(naming){
+                $("#el-loading-mask").show()
+                $.ajax({
+                    url: "http://222.211.78.60:9103/bigscreen/organ/getUrlByNaming?naming="+content,
+                    type: "get",
+                    dataType: "json",
+                    success: function (data) {
+                        if(data.code==0){
+                            $(".video-box").show();
+                            let rtmp=data.msg+'\\';
+                            setTimeout(()=>{
+                                videojs('rtmpVideo').src('');
+                                videojs('rtmpVideo').src(rtmp);
+                                videojs('rtmpVideo').play()
+                            },1500)
+                        }
+                    },complete(){
+                        setTimeout(()=>{
+                            $("#el-loading-mask").hide()
+                        },1500)
+                    }
+                });
+            }else {
+                openInfo(content,e)
+            }
+        });
+    }
+
+    function openInfo(content,e){
+        var p = e.target;
+        var point = new BMap.Point(p.getPosition().lng, p.getPosition().lat);
+        var infoWindow = new BMap.InfoWindow(content,opts);  // 创建信息窗口对象
+        map.openInfoWindow(infoWindow,point); //开启信息窗口
+    }
+    function addMarker(point,type,content){
+        if(type==1){
+            var myIcon = new BMap.Icon("image/11.png", new BMap.Size(32,32));
+            //坐标图片大小
+            // myIcon.setImageSize(new BMap.Size(70, 75));
+        }else if(type==2) {
+            var myIcon = new BMap.Icon("image/22.png", new BMap.Size(32,32));
+            // myIcon.setImageSize(new BMap.Size(210, 245));
+            //坐标图片大小
+            // myIcon.setImageSize(new BMap.Size(43, 45));
+        }else if(type==3) {
+            var myIcon = new BMap.Icon("image/33.png", new BMap.Size(32,32));
+            //坐标图片大小
+            // myIcon.setImageSize(new BMap.Size(43, 45));
+        }else if(type==4) {
+            var myIcon = new BMap.Icon("image/44.png", new BMap.Size(32,32));
+            //坐标图片大小
+            // myIcon.setImageSize(new BMap.Size(43, 45));
+        }else if(type==5) {
+            var myIcon = new BMap.Icon("image/55.png", new BMap.Size(32,32));
+            //坐标图片大小
+            // myIcon.setImageSize(new BMap.Size(43, 45));
+        }else if(type==6) {
+            var myIcon = new BMap.Icon("image/66.png", new BMap.Size(32,32));
+            //坐标图片大小
+            // myIcon.setImageSize(new BMap.Size(43, 45));
+        }
+        var marker = new BMap.Marker(point,{icon:myIcon});  // 创建标注
+        var en={
+            type:type,
+        }
+        marker.attributes = {entity: en};
+        marker.hide();
+        map.addOverlay(marker);// 将标注添加到地图中
+        if(type==1){
+            addClickHandler(content,marker);
+        }else if(type==2) {
+            addClickHandler(content,marker,content);
+        }else if(type==3) {
+            addClickHandler(content,marker);
+        }else if(type==4) {
+            addClickHandler(content,marker);
+        }else if(type==5) {
+            addClickHandler(content,marker);
+        }else if(type==6) {
+            addClickHandler(content,marker);
+        }
+    }
+    function showMarkerByType(type,isShow){
+        var allOverlay = map.getOverlays();
+        var len = allOverlay.length;
+        var obj=null;
+        for (var i = len-1; i > -1; i--){
+            obj=allOverlay[i];
+            if(obj&&obj.attributes&&obj.attributes.entity&&obj.attributes.entity.type == type){
+                if(isShow){
+                    obj.show()
+                }else {
+                    obj.hide()
+                }
+            }
+        }
+    }
+
+  
+
+    function initMap(orgId){
+        $.ajax({
+            url: "http://222.211.78.60:9103/bigscreen/statistics/deviceList/"+orgId,
+            type: "get",
+            dataType: "json",
+            success: function (data) {
+                if(data.code==0){
+                    num1=0;
+                    num2=0;
+                    num3=0;
+                    num4=0;
+                    num5=0;
+                    num6=0;
+                    for(var i=0;i<data.result.length;i++){
+                        if( data.result[i].locationX*1 && data.result[i].locationY*1){
+                            var t=data.result[i].status==0?'在线':'离线'
+                            let obj=bd_encrypt(data.result[i].locationX,data.result[i].locationY)
+                            if(data.result[i].type=="IDT2"){
+                                //门禁设备
+
+                                /* var point = new BMap.Point(data.result[i].locationX, data.result[i].locationY);*/
+                                var point = new BMap.Point(obj.x, obj.y);
+                                var content=data.result[i].name+'<br/>状态：'+t
+                                addMarker(point,1,content);
+                                num1++
+                            }else if(data.result[i].type=="IDT0"){
+                                //监控设备
+                                var point = new BMap.Point(obj.x, obj.y);
+                                var content=data.result[i].ip
+                                addMarker(point,2,content);
+                                num2++
+                            }else if(data.result[i].type=="IDT6"){
+                                //消防栓
+                                var point = new BMap.Point(obj.x, obj.y);
+                                var content=data.result[i].name+'<br/>状态：'+t
+                                addMarker(point,3,content);
+                                num3++
+                            }else if(data.result[i].type=="IDT7"){
+                                //井盖
+                                var point = new BMap.Point(obj.x, obj.y);
+                                var content=data.result[i].name+'<br/>状态：'+t
+                                addMarker(point,4,content);
+                                num4++
+                            }else if(data.result[i].type=="IDT4"){
+                                //一键报警
+                                var point = new BMap.Point(obj.x, obj.y);
+                                var content=data.result[i].name+'<br/>状态：'+t
+                                addMarker(point,5,content);
+                                num5++
+                            }else if(data.result[i].type=="IDT5"){
+                                //烟感
+                                var point = new BMap.Point(obj.x, obj.y);
+                                var content=data.result[i].name+'<br/>状态：'+t
+                                addMarker(point,6,content);
+                                num6++
+                            }
+                        }
+                        $("#num1").text(num1)
+                        $("#num2").text(num2)
+                        $("#num3").text(num3)
+                        $("#num4").text(num4)
+                        $("#num5").text(num5)
+                        $("#num6").text(num6)
+                        }
+
+                }
+            }
+        });
+    }
+    function bd_encrypt(gg_lng, gg_lat) {
+        var X_PI = Math.PI * 3000.0 / 180.0;
+        var x = gg_lng, y = gg_lat;
+        var z = Math.sqrt(x * x + y * y) + 0.00002 * Math.sin(y * X_PI);
+        var theta = Math.atan2(y, x) + 0.000003 * Math.cos(x * X_PI);
+        var bd_lng = z * Math.cos(theta) + 0.0065;
+        var bd_lat = z * Math.sin(theta) + 0.006;
+        return {
+            x: bd_lng,
+            y: bd_lat
+        };
+    }
+
+</script>
+</body>
+</html>
